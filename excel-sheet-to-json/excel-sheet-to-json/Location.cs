@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace excel_sheet_to_json
@@ -10,7 +8,10 @@ namespace excel_sheet_to_json
         [JsonProperty(PropertyName = "caption")]
         public string Caption { get; set; }
 
-        [JsonProperty(PropertyName = "Spaces")]
-        public List<Space> Spaces { get; set; }
+        [JsonProperty(PropertyName = "code")]
+        public string Code { get; set; }
+
+        [JsonProperty(PropertyName = "building parts")]
+        public List<BuildingPart> BuildingParts { get; set; }
     }
 }

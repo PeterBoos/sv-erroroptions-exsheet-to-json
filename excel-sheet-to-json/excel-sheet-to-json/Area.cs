@@ -1,8 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace excel_sheet_to_json
 {
-    public class Part
+    public class Area
+
     {
         [JsonProperty(PropertyName = "caption")]
         public string Caption { get; set; }
@@ -10,7 +14,7 @@ namespace excel_sheet_to_json
         [JsonProperty(PropertyName = "code")]
         public string Code { get; set; }
 
-        [JsonProperty(PropertyName = "work order")]
-        public WorkOrder WorkOrder { get; set; }
+        [JsonProperty(PropertyName = "locations")]
+        public List<Location> Locations { get; set; }
     }
 }

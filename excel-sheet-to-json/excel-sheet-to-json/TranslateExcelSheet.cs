@@ -12,19 +12,20 @@ namespace excel_sheet_to_json
     {
         public static bool Run()
         {
-            const string filePath = @"C:\Users\peboos\Documents\ABG Gavlegården\arbetsordertyper.xlsx";
-            const string resultPath = @"C:\Users\peboos\Documents\ABG Gavlegården\arbetsordertyper_json.txt";
+            const string filePath = @"C:\Users\peboos\Documents\ABG Gavlegårdarna\Etapp 3\Felrapport\Arbetsorderreferens\arbetsordertyper.xlsx";
+            const string resultPath = @"C:\Users\peboos\Documents\ABG Gavlegårdarna\Etapp 3\Felrapport\Arbetsorderreferens\arbetsordertyper_json_20190523.txt";
             const string sheetName = "Sammanställning";
 
             var excelRows = new List<ExcelRow>();
-            var list = new List<Location>();
+            var options = new Options { Areas = new List<Area>() };
+            var list = options.Areas;
 
             using (var p = new ExcelPackage(new FileInfo(filePath)))
             {
                 var s = p.Workbook.Worksheets.FirstOrDefault(n => n.Name == sheetName);
                 if (s == null)
                 {
-                    Console.WriteLine($"Sheet 'sheetName' not found.");
+                    Console.WriteLine($"Sheet '{sheetName}' not found.");
                     return false;
                 }
 
@@ -34,55 +35,56 @@ namespace excel_sheet_to_json
                 {
                     excelRows.Add(new ExcelRow
                     {
-                        Location = s.Cells[row, 1].Value?.ToString(),
-                        SpaceCode = s.Cells[row, 2].Value?.ToString(),
-                        SpaceCaption = s.Cells[row, 3].Value?.ToString(),
-                        PartCode = s.Cells[row, 4].Value?.ToString(),
-                        PartCaption = s.Cells[row, 5].Value?.ToString(),
-                        WorkOrderType = s.Cells[row, 6].Value?.ToString(),
-                        WorkOrderCategory = s.Cells[row, 7].Value?.ToString()
+                        AreaCaption = s.Cells[row, 1].Value?.ToString(),
+                        AreaCode = s.Cells[row, 2].Value?.ToString(),
+                        LocationCode = s.Cells[row, 3].Value?.ToString(),
+                        LocationCaption = s.Cells[row, 4].Value?.ToString(),
+                        PartCode = s.Cells[row, 5].Value?.ToString(),
+                        PartCaption = s.Cells[row, 6].Value?.ToString(),
+                        WorkOrderType = s.Cells[row, 7].Value?.ToString(),
+                        WorkOrderCategory = s.Cells[row, 8].Value?.ToString()
                     });
                 }
+            }
+
+            // Areas
+            foreach (var row in excelRows)
+            {
+                if (list.Any((Func<Area, bool>)(a => a.Code == row.AreaCode))) continue;
+                list.Add(new Area { Caption = row.AreaCaption, Code = row.AreaCode, Locations = new List<Location>() });
             }
 
             // Locations
             foreach (var row in excelRows)
             {
-                if (list.Any(l => l.Caption == row.Location)) continue;
-                list.Add(new Location { Caption = row.Location, Spaces = new List<Space>() });
-            }
-
-            // Spaces
-            foreach (var row in excelRows)
-            {
-                var location = list.SingleOrDefault(l => l.Caption == row.Location);
-                if (location.Spaces.Any(x => x.Caption == row.SpaceCaption && x.Code == row.SpaceCode)) continue;
-                location.Spaces.Add(new Space { Caption = row.SpaceCaption, Code = row.SpaceCode, BuildingParts = new List<Part>() });
+                var area = list.SingleOrDefault((Func<Area, bool>)(l => l.Code == row.AreaCode));
+                if (area.Locations.Any(x => x.Code == row.LocationCode && x.Caption == row.LocationCaption)) continue;
+                area.Locations.Add(new Location { Caption = row.LocationCaption, Code = row.LocationCode, BuildingParts = new List<BuildingPart>() });
             }
 
             // Parts
             foreach (var row in excelRows)
             {
-                var location = list.SingleOrDefault(l => l.Caption == row.Location);
-                var space = location.Spaces.SingleOrDefault(x => x.Caption == row.SpaceCaption && x.Code == row.SpaceCode);
-                if (space.BuildingParts.Any(x =>
+                var area = list.SingleOrDefault((Func<Area, bool>)(l => l.Code == row.AreaCode));
+                var location = area.Locations.SingleOrDefault(x => x.Caption == row.LocationCaption && x.Code == row.LocationCode);
+                if (location.BuildingParts.Any(x =>
                     x.Caption == row.PartCaption &&
-                    x.Code == row.PartCode &&
-                    x.WorkOrder.Type == row.WorkOrderType &&
-                    x.WorkOrder.Category == row.WorkOrderCategory)) continue;
-                space.BuildingParts.Add(new Part
+                    x.Code == row.PartCode)) continue;
+                    //x.WorkOrder.Type == row.WorkOrderType &&
+                    //x.WorkOrder.Category == row.WorkOrderCategory)) continue;
+                location.BuildingParts.Add(new BuildingPart
                 {
                     Caption = row.PartCaption,
-                    Code = row.PartCode,
-                    WorkOrder = new WorkOrder
-                    {
-                        Type = row.WorkOrderType,
-                        Category = row.WorkOrderCategory
-                    }
+                    Code = row.PartCode
+                    //WorkOrder = new WorkOrder
+                    //{
+                    //    Type = row.WorkOrderType,
+                    //    Category = row.WorkOrderCategory
+                    //}
                 });
             }
 
-            var json = JsonConvert.SerializeObject(list, Formatting.Indented);
+            var json = JsonConvert.SerializeObject(options, Formatting.Indented);
 
             using (var sw = new StreamWriter(resultPath))
             {
